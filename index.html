@@ -47,6 +47,12 @@ header{display:flex;justify-content:space-between;align-items:center;padding:14p
 .sz{min-width:42px;padding:6px 0;border:1.5px solid var(--line);background:none;border-radius:4px}
 .sz[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
 .add{margin-top:auto;background:var(--accent);color:var(--accent-ink);border:0;border-radius:4px;padding:12px;font-weight:700;font-size:16px}
+aside{overflow-y:auto}
+aside .items{flex:none;max-height:30vh}
+.ship{display:grid;gap:10px;margin:4px 0 14px}
+.ship label{display:grid;gap:4px;font:600 13px "Bricolage Grotesque",system-ui,sans-serif}
+.ship input,.ship textarea{font:400 16px Newsreader,Georgia,serif;padding:10px;border:1.5px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 a.add{display:block;text-align:center;text-decoration:none;font:700 16px "Bricolage Grotesque",system-ui,sans-serif}
 a.add[aria-disabled="true"]{opacity:.45;pointer-events:none}
 .msg{min-height:1.4em;margin:0;color:var(--accent);font-size:15px}
@@ -88,6 +94,7 @@ footer{text-align:center;color:var(--muted);font-size:15px;padding:0 20px 40px}
   <h2>Your bag <button class="x" id="close" aria-label="Close bag">×</button></h2>
   <div class="items" id="items"></div>
   <div class="total"><span>Total</span><span id="total">₹0</span></div>
+  <div class="ship"><label>Full name<input id="f-n" autocomplete="name"></label><label>Phone number<input id="f-p" type="tel" inputmode="numeric" autocomplete="tel" maxlength="14"></label><label>Delivery address<textarea id="f-a" rows="2" autocomplete="street-address"></textarea></label><div class="two"><label>City<input id="f-c" autocomplete="address-level2"></label><label>Pincode<input id="f-z" inputmode="numeric" maxlength="6" autocomplete="postal-code"></label></div></div>
   <a class="add" id="order" target="_blank" rel="noopener" aria-disabled="true">Order on WhatsApp</a>
   <p class="story" style="font-size:15px;margin:8px 0 0">Your order opens in WhatsApp. We confirm delivery and payment there.</p><p class="msg" id="omsg" role="status"></p>
 </aside>
@@ -99,6 +106,7 @@ var $=function(i){return document.getElementById(i)};
 try{var saved=localStorage.getItem("hs-bag");if(saved)cart=JSON.parse(saved)||[]}catch(e){}
 function save(){try{localStorage.setItem("hs-bag",JSON.stringify(cart))}catch(e){}}
 function money(n){return"₹"+n.toLocaleString("en-IN")}
+function ship(){var g=function(i){return($(i).value||"").trim()},n=g("f-n"),p=g("f-p").replace(/\D/g,""),a=g("f-a"),c=g("f-c"),z=g("f-z").replace(/\D/g,"");return{n:n,p:p,a:a,c:c,z:z,ok:n.length>1&&p.length>=10&&a.length>=8&&c.length>1&&z.length===6}}
 function filters(){var t=["All"].concat(P.map(function(x){return x.t}).filter(function(v,i,a){return a.indexOf(v)===i}));
 $("filters").innerHTML=t.map(function(x){return'<button class="chip" aria-pressed="'+(x===filter)+'" data-f="'+x+'">'+x+'</button>'}).join("")}
 function grid(){$("grid").innerHTML=P.filter(function(x){return filter==="All"||x.t===filter}).map(function(x){
@@ -107,7 +115,7 @@ function bag(){var n=0,t=0;$("count").textContent=cart.reduce(function(a,c){retu
 $("items").innerHTML=cart.length?cart.map(function(c,i){var p=P.filter(function(x){return x.id===c.id})[0];n+=c.q;t+=p.p*c.q;
 return'<div class="item"><b>'+p.n+'</b><span class="price">'+money(p.p*c.q)+'</span><span class="story">Size '+c.z+'</span><span class="qty"><button data-q="'+i+'" data-d="-1" aria-label="Remove one">−</button>'+c.q+'<button data-q="'+i+'" data-d="1" aria-label="Add one">+</button></span></div>'}).join(""):'<p class="empty">Your bag is empty. Pick a size on any pair and add it.</p>';
 cart.forEach(function(c){});t=cart.reduce(function(a,c){var p=P.filter(function(x){return x.id===c.id})[0];return a+p.p*c.q},0);
-$("total").textContent=money(t);var o=$("order");if(cart.length){var m="Hi hidestori, I would like to order:\n"+cart.map(function(c){var p=P.filter(function(x){return x.id===c.id})[0];return"- "+p.n+", size "+c.z+", qty "+c.q+" = "+money(p.p*c.q)}).join("\n")+"\nTotal: "+money(t)+"\n\nName:\nDelivery address:";o.href="https://wa.me/919894128901?text="+encodeURIComponent(m);o.removeAttribute("aria-disabled")}else{o.removeAttribute("href");o.setAttribute("aria-disabled","true")}save()}
+$("total").textContent=money(t);var o=$("order"),v=ship();if(cart.length&&v.ok){var m="Hi hidestori, I would like to order:\n"+cart.map(function(c){var p=P.filter(function(x){return x.id===c.id})[0];return"- "+p.n+", size "+c.z+", qty "+c.q+" = "+money(p.p*c.q)}).join("\n")+"\nTotal: "+money(t)+"\n\nDeliver to:\n"+v.n+"\nPhone: "+v.p+"\n"+v.a+"\n"+v.c+" - "+v.z;o.href="https://wa.me/919894128901?text="+encodeURIComponent(m);o.removeAttribute("aria-disabled");$("omsg").textContent=""}else{o.removeAttribute("href");o.setAttribute("aria-disabled","true");$("omsg").textContent=cart.length?"Fill in your name, phone and full address to order.":""}save()}
 function show(o){$("bag").classList.toggle("open",o);$("shade").classList.toggle("on",o);if(o)$("close").focus();else $("open").focus()}
 document.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
 if(b.dataset.f){filter=b.dataset.f;filters();grid()}
@@ -121,6 +129,8 @@ else if(b.id==="close")show(false);
 });
 $("shade").addEventListener("click",function(){show(false)});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")show(false)});
+try{var s=JSON.parse(localStorage.getItem("hs-ship")||"{}");["n","p","a","c","z"].forEach(function(k){if(s[k])$("f-"+k).value=s[k]})}catch(e){}
+document.querySelector(".ship").addEventListener("input",function(){try{localStorage.setItem("hs-ship",JSON.stringify({n:$("f-n").value,p:$("f-p").value,a:$("f-a").value,c:$("f-c").value,z:$("f-z").value}))}catch(e){}bag()});
 filters();grid();bag();
 </script>
 </body>
